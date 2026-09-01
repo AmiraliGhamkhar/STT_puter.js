@@ -206,8 +206,126 @@
 
   function isAudioFile(file) {
     if (!file) return false;
-    const allowedExtensions = /\.(mp3|wav|m4a|ogg|webm|aac|flac|mp4|mpeg)$/i;
-    return file.type.startsWith("audio/") || allowedExtensions.test(file.name);
+    const allowedExtensions = /\.(mp3|wav|m4a|ogg|oga|opus|webm|aac|flac|mp4|mpeg|mpga)$/i;
+    const mime = String(file.type || "").split(";")[0].trim().toLowerCase();
+    return mime.startsWith("audio/") || mime === "video/webm" || allowedExtensions.test(file.name || "");
+  }
+
+  // Puter.js converts File/Blob inputs to data URLs, then the backend derives the
+  // OpenAI filename from the MIME subtype only (`audio/mpeg` → `input.mpeg`).
+  // gpt-4o-transcribe rejects that even for valid MP3s; extra MIME parameters such
+  // as `codecs=opus` also break base64 decoding. See:
+  // https://docs.puter.com/AI/speech2txt/ and HeyPuter/puter#2655
+  const AUDIO_PROFILES = [
+    { extensions: ["mp3", "mpga", "mpeg"], mimeType: "audio/mp3" },
+    { extensions: ["wav", "wave"], mimeType: "audio/wav" },
+    { extensions: ["m4a", "aac"], mimeType: "audio/m4a" },
+    { extensions: ["mp4"], mimeType: "audio/mp4" },
+    { extensions: ["ogg", "oga", "opus"], mimeType: "audio/ogg" },
+    { extensions: ["webm"], mimeType: "audio/webm" },
+    { extensions: ["flac"], mimeType: "audio/flac" },
+  ];
+
+  const MIME_TO_EXTENSION = {
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/x-mpeg": "mp3",
+    "audio/mpga": "mp3",
+    "audio/wav": "wav",
+    "audio/x-wav": "wav",
+    "audio/wave": "wav",
+    "audio/vnd.wave": "wav",
+    "audio/mp4": "m4a",
+    "audio/x-m4a": "m4a",
+    "audio/m4a": "m4a",
+    "audio/aac": "m4a",
+    "audio/x-aac": "m4a",
+    "audio/ogg": "ogg",
+    "application/ogg": "ogg",
+    "audio/opus": "ogg",
+    "audio/webm": "webm",
+    "video/webm": "webm",
+    "audio/flac": "flac",
+    "audio/x-flac": "flac",
+  };
+
+  function resolveAudioIdentity(file) {
+    const extension = getFileExtension(file).toLowerCase();
+    const rawType = String(file?.type || "").split(";")[0].trim().toLowerCase();
+    const fromName = AUDIO_PROFILES.find((profile) => profile.extensions.includes(extension));
+    if (fromName) {
+      return { mimeType: fromName.mimeType, extension: fromName.extensions[0] };
+    }
+
+    const mappedExtension = MIME_TO_EXTENSION[rawType];
+    if (mappedExtension) {
+      const profile = AUDIO_PROFILES.find((item) => item.extensions.includes(mappedExtension));
+      return { mimeType: profile.mimeType, extension: profile.extensions[0] };
+    }
+
+    const subtype = rawType.includes("/") ? rawType.split("/")[1] : "";
+    const fromSubtype = AUDIO_PROFILES.find((profile) => profile.extensions.includes(subtype));
+    if (fromSubtype) {
+      return { mimeType: fromSubtype.mimeType, extension: fromSubtype.extensions[0] };
+    }
+
+    if (rawType.startsWith("audio/") || rawType === "video/webm") {
+      return {
+        mimeType: rawType,
+        extension: extension && extension !== "audio" ? extension : subtype || "mp3",
+      };
+    }
+
+    return { mimeType: "audio/mp3", extension: "mp3" };
+  }
+
+  function readBlobAsDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("خواندن فایل صوتی ممکن نشد."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function prepareSpeechSource(file) {
+    const { mimeType } = resolveAudioIdentity(file);
+    const blob = file.type === mimeType ? file : new Blob([file], { type: mimeType });
+    const dataUrl = await readBlobAsDataUrl(blob);
+    if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) {
+      throw new Error("تبدیل فایل صوتی برای ارسال ممکن نشد.");
+    }
+    const comma = dataUrl.indexOf(",");
+    const payload = comma >= 0 ? dataUrl.slice(comma + 1) : "";
+    if (!payload) {
+      throw new Error("فایل صوتی خالی است.");
+    }
+    return `data:${mimeType};base64,${payload}`;
+  }
+
+  function getErrorText(error) {
+    if (!error) return "";
+    if (typeof error === "string") return error.trim();
+    const nested = error.error;
+    const candidates = [
+      error.message,
+      typeof nested === "string" ? nested : nested?.message,
+      nested?.error,
+      error.code,
+    ];
+    const found = candidates.find((value) => typeof value === "string" && value.trim());
+    return found ? found.trim() : "";
+  }
+
+  function isAudioFormatError(error) {
+    const lower = getErrorText(error).toLowerCase();
+    return /corrupt|unrecognized file format|unsupported (audio|media) format|audio file might be|invalid.*audio/.test(
+      lower,
+    );
+  }
+
+  function shouldRetryWithWhisper(error, model) {
+    return ["gpt-4o-mini-transcribe", "gpt-4o-transcribe"].includes(model) && isAudioFormatError(error);
   }
 
   function setAudioFile(file) {
@@ -380,8 +498,9 @@
 
       recorder.addEventListener("stop", () => {
         const recordingType = recorder.mimeType || "audio/webm";
-        const extension = recordingType.includes("ogg") ? "ogg" : "webm";
-        const blob = new Blob(state.recordingChunks, { type: recordingType });
+        const cleanType = recordingType.split(";")[0].trim() || "audio/webm";
+        const extension = cleanType.includes("ogg") ? "ogg" : "webm";
+        const blob = new Blob(state.recordingChunks, { type: cleanType });
         resetRecordingUI();
         stopStreamTracks();
 
@@ -390,7 +509,7 @@
           return;
         }
 
-        const recordedFile = new File([blob], `ضبط-${fileDateStamp()}.${extension}`, { type: recordingType });
+        const recordedFile = new File([blob], `ضبط-${fileDateStamp()}.${extension}`, { type: cleanType });
         setAudioFile(recordedFile);
         elements.recordHint.textContent = "ضبط شما برای تبدیل آماده است";
       });
@@ -540,7 +659,19 @@
     beginProcessing();
 
     try {
-      const result = await window.puter.ai.speech2txt(state.file, options);
+      const source = await prepareSpeechSource(state.file);
+      const payload = { file: source, ...options };
+      let result;
+      try {
+        result = await window.puter.ai.speech2txt(payload);
+      } catch (error) {
+        if (!shouldRetryWithWhisper(error, options.model)) throw error;
+        result = await window.puter.ai.speech2txt({
+          ...payload,
+          model: "whisper-1",
+          response_format: options.response_format === "json" ? "json" : "verbose_json",
+        });
+      }
       finishProcessing();
       const transcript = extractTranscript(result);
       const segments = extractSegments(result);
@@ -736,12 +867,12 @@
   }
 
   function getFriendlyError(error) {
-    const original = String(error?.message || error || "").trim();
+    const original = getErrorText(error);
     const lower = original.toLowerCase();
     if (/sign.?in|login|auth|permission|unauthori[sz]ed/.test(lower)) {
       return "برای ادامه، درخواست ورود یا تأیید Puter را در مرورگر کامل کنید و دوباره تلاش کنید.";
     }
-    if (/format|unsupported|invalid.*file/.test(lower)) {
+    if (isAudioFormatError(error) || /unrecognized file format/.test(lower)) {
       return "این فرمت صوتی پشتیبانی نشد. MP3، WAV، M4A، OGG یا WEBM را امتحان کنید.";
     }
     if (/network|fetch|internet|offline|failed to fetch/.test(lower)) {
@@ -750,7 +881,7 @@
     if (/too large|size|limit/.test(lower)) {
       return "حجم فایل برای پردازش مناسب نیست. فایل کوتاه‌تر یا کم‌حجم‌تری امتحان کنید.";
     }
-    if (original && original.length < 135 && !/[<>]/.test(original)) {
+    if (original && original.length < 135 && !/[<>]/.test(original) && original !== "[object Object]") {
       return `تبدیل صدا انجام نشد: ${original}`;
     }
     return "تبدیل صدا انجام نشد. چند لحظه بعد دوباره تلاش کنید.";

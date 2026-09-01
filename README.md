@@ -31,15 +31,18 @@ python3 -m http.server 4173 --bind 0.0.0.0
 <script src="https://js.puter.com/v2/"></script>
 ```
 
-هنگام انتخاب فایل و فشردن «تبدیل صدا به متن»، اپلیکیشن این الگو را استفاده می‌کند:
+هنگام انتخاب فایل و فشردن «تبدیل صدا به متن»، اپلیکیشن فایل را به data URL با MIME تمیز تبدیل می‌کند — مطابق [مستندات `speech2txt`](https://docs.puter.com/AI/speech2txt/) — سپس این الگو را استفاده می‌کند:
 
 ```js
-const result = await puter.ai.speech2txt(audioFile, {
+const result = await puter.ai.speech2txt({
+  file: 'data:audio/mp3;base64,...',
   language: 'fa',
   model: 'gpt-4o-mini-transcribe',
   response_format: 'json'
 });
 ```
+
+Puter.js فایل‌های مرورگر را به data URL تبدیل می‌کند و نام فایل ارسالی به مدل از زیرنوع MIME ساخته می‌شود. برای همین `audio/mpeg` یا `audio/webm;codecs=opus` حتی برای فایل‌های معتبر MP3/WEBM ممکن است با خطای «فرمت پشتیبانی نشد» رد شوند. اپلیکیشن قبل از ارسال، MIME را به پسوند مورد قبول OpenAI (`mp3`، `wav`، `m4a`، `ogg`، `webm`) هم‌تراز می‌کند.
 
 بسته به تنظیمات رابط، مدل و قالب پاسخ برای زمان‌بندی (`whisper-1` / `verbose_json`) یا تفکیک گوینده (`gpt-4o-transcribe-diarize` / `diarized_json`) به‌طور خودکار تغییر می‌کند. ممکن است Puter در نخستین استفاده، پنجره‌ای برای ورود یا تأیید دسترسی نشان دهد.
 

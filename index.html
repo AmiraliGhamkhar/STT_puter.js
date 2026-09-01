@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="آوا‌نویس، ابزار فارسی تبدیل صوت به متن با Puter.js — بدون نیاز به کلید API."
+    />
+    <meta name="theme-color" content="#071d27" />
+    <title>آوا‌نویس | تبدیل صوت فارسی به متن</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Puter.js provides keyless, browser-side access to speech2txt(). -->
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-glow glow-one" aria-hidden="true"></div>
+    <div class="page-glow glow-two" aria-hidden="true"></div>
+
+    <header class="site-header shell">
+      <a class="brand" href="#top" aria-label="آوا نویس، صفحه اصلی">
+        <span class="brand-mark" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i>
+        </span>
+        <span>آوا<span class="brand-accent">نویس</span></span>
+      </a>
+
+      <nav class="header-nav" aria-label="ناوبری اصلی">
+        <a href="#workspace">تبدیل صدا</a>
+        <a href="#how-it-works">راهنما</a>
+      </nav>
+
+      <div class="connection-pill" id="connectionStatus" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>آماده برای پردازش</span>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero shell" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-spark">✦</span> تبدیل گفتار فارسی با Puter.js</p>
+          <h1 id="heroTitle">از صدا تا متن،<br /><em>روان و دقیق.</em></h1>
+          <p class="hero-description">
+            فایل صوتی‌تان را بارگذاری کنید یا همان‌جا ضبط کنید؛ آوا‌نویس گفتار فارسی را به رونوشت قابل ویرایش تبدیل می‌کند.
+          </p>
+          <div class="hero-points" aria-label="ویژگی‌ها">
+            <span><b>بدون</b> کلید API</span>
+            <span><b>فا</b> تشخیص زبان فارسی</span>
+            <span><b>TXT</b> خروجی قابل دانلود</span>
+          </div>
+        </div>
+
+        <aside class="hero-orb" aria-label="نمایش تصویری موج صدا">
+          <div class="orb-ring ring-outer"></div>
+          <div class="orb-ring ring-inner"></div>
+          <div class="orb-core">
+            <svg viewBox="0 0 160 160" aria-hidden="true">
+              <path d="M23 80h13l9-30 15 64 14-92 15 112 14-80 12 26h22" />
+            </svg>
+          </div>
+          <span class="orb-label label-one">گفتار فارسی</span>
+          <span class="orb-label label-two">متن آماده</span>
+        </aside>
+      </section>
+
+      <section class="workspace shell" id="workspace" aria-label="فضای کاری تبدیل صوت به متن">
+        <div class="source-column">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">گام ۱</p>
+              <h2>صدای خود را اضافه کنید</h2>
+            </div>
+            <span class="step-number" aria-hidden="true">01</span>
+          </div>
+
+          <div
+            class="drop-zone"
+            id="dropZone"
+            role="button"
+            tabindex="0"
+            aria-controls="audioInput"
+            aria-label="برای انتخاب فایل صوتی کلیک کنید یا فایل را اینجا رها کنید"
+          >
+            <input
+              id="audioInput"
+              class="visually-hidden"
+              type="file"
+              accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm,.aac,.flac"
+            />
+            <div class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" />
+                <path d="M5 14.5v3.25A2.25 2.25 0 0 0 7.25 20h9.5A2.25 2.25 0 0 0 19 17.75V14.5" />
+              </svg>
+            </div>
+            <p class="drop-title">فایل صوتی را اینجا رها کنید</p>
+            <p class="drop-subtitle">یا <span>از دستگاه انتخاب کنید</span></p>
+            <div class="format-chips" aria-label="فرمت‌های قابل پشتیبانی">
+              <span>MP3</span><span>WAV</span><span>M4A</span><span>OGG</span>
+            </div>
+          </div>
+
+          <div class="or-divider" aria-hidden="true"><span>یا</span></div>
+
+          <section class="record-card" aria-labelledby="recordHeading">
+            <div class="record-copy">
+              <div class="record-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="8" y="3" width="8" height="12" rx="4" />
+                  <path d="M5 11a7 7 0 0 0 14 0M12 18v3m-3 0h6" />
+                </svg>
+              </div>
+              <div>
+                <h3 id="recordHeading">ضبط مستقیم صدا</h3>
+                <p id="recordHint">با میکروفون دستگاه شروع کنید</p>
+              </div>
+            </div>
+            <div class="record-actions">
+              <span class="record-timer" id="recordTimer" aria-live="off">00:00</span>
+              <button class="record-button" id="recordButton" type="button" aria-pressed="false">
+                <span class="record-button-dot" aria-hidden="true"></span>
+                <span id="recordButtonText">شروع ضبط</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="audio-file-card is-hidden" id="audioFileCard" aria-label="فایل صوتی انتخاب شده">
+            <div class="audio-file-topline">
+              <div class="file-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                  <path d="M13 2v7h7M8 15h8M8 18h5" />
+                </svg>
+              </div>
+              <div class="file-details">
+                <strong id="fileName">—</strong>
+                <span id="fileMeta">—</span>
+              </div>
+              <button class="icon-button" id="removeFile" type="button" aria-label="حذف فایل انتخاب‌شده" title="حذف فایل">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18M9 6V4h6v2m-7 0 1 14h6l1-14" />
+                </svg>
+              </button>
+            </div>
+            <div class="audio-wave-row">
+              <button class="play-button" id="playAudio" type="button" aria-label="پخش فایل صوتی">
+                <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z" /></svg>
+              </button>
+              <div class="mini-wave" id="miniWave" aria-hidden="true"></div>
+              <span class="audio-duration" id="audioDuration">00:00</span>
+            </div>
+            <audio id="audioPreview" preload="metadata"></audio>
+          </section>
+
+          <section class="settings-card" aria-labelledby="settingsHeading">
+            <div class="settings-title-row">
+              <div>
+                <p class="section-kicker">گام ۲</p>
+                <h3 id="settingsHeading">تنظیمات رونوشت</h3>
+              </div>
+              <button class="text-button" id="resetSettings" type="button">بازنشانی</button>
+            </div>
+
+            <label class="field-label" for="modelSelect">مدل پردازش</label>
+            <div class="select-wrap">
+              <select id="modelSelect">
+                <option value="gpt-4o-mini-transcribe">GPT-4o mini — سریع و متعادل</option>
+                <option value="gpt-4o-transcribe">GPT-4o — دقت بالاتر</option>
+                <option value="whisper-1">Whisper — مناسب زمان‌بندی</option>
+              </select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
+            </div>
+
+            <div class="language-line">
+              <span>زبان گفتار</span>
+              <span class="language-value"><span class="flag-dot">فا</span> فارسی <small>fa</small></span>
+            </div>
+
+            <fieldset class="output-options">
+              <legend>نوع خروجی</legend>
+              <label class="option-row">
+                <input name="outputStyle" type="radio" value="plain" checked />
+                <span class="radio-ui" aria-hidden="true"></span>
+                <span><b>متن ساده</b><small>یک رونوشت روان و قابل ویرایش</small></span>
+              </label>
+              <label class="option-row">
+                <input name="outputStyle" type="radio" value="timestamps" />
+                <span class="radio-ui" aria-hidden="true"></span>
+                <span><b>بازه‌های زمانی</b><small>نمایش زمان هر بخش از گفتار</small></span>
+              </label>
+              <label class="option-row">
+                <input name="outputStyle" type="radio" value="speakers" />
+                <span class="radio-ui" aria-hidden="true"></span>
+                <span><b>تفکیک گوینده‌ها</b><small>برای جلسه‌ها و گفت‌وگوها</small></span>
+              </label>
+            </fieldset>
+
+            <label class="toggle-row">
+              <span>
+                <b>ترجمه به انگلیسی</b>
+                <small>به‌جای رونوشت فارسی، خروجی انگلیسی بگیرید</small>
+              </span>
+              <input id="translateToggle" type="checkbox" />
+              <span class="toggle-ui" aria-hidden="true"></span>
+            </label>
+            <p class="settings-note" id="settingsNote">مدل انتخاب‌شده برای خروجی متن ساده استفاده می‌شود.</p>
+          </section>
+
+          <button class="transcribe-button" id="transcribeButton" type="button" disabled>
+            <span class="button-wave" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span id="transcribeButtonText">تبدیل صدا به متن</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+          </button>
+          <p class="api-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></svg>
+            پردازش از طریق Puter.js انجام می‌شود؛ بدون واردکردن کلید API.
+          </p>
+        </div>
+
+        <div class="result-column">
+          <div class="result-card" id="resultCard">
+            <div class="result-heading">
+              <div>
+                <div class="heading-with-status">
+                  <p class="section-kicker">گام ۳</p>
+                  <span class="ready-state" id="resultState"><i></i> در انتظار صدا</span>
+                </div>
+                <h2>رونوشت شما</h2>
+              </div>
+              <div class="result-actions">
+                <button class="icon-text-button" id="copyButton" type="button" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                  <span>کپی</span>
+                </button>
+                <button class="icon-text-button" id="downloadButton" type="button" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" /></svg>
+                  <span>دانلود</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="result-empty" id="resultEmpty">
+              <div class="empty-illustration" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <h3>آماده‌ام صدایتان را بشنوم</h3>
+              <p>یک فایل اضافه کنید یا با میکروفون شروع به ضبط کنید. متن نهایی همین‌جا ظاهر می‌شود.</p>
+            </div>
+
+            <div class="processing-state is-hidden" id="processingState" aria-live="polite">
+              <div class="processing-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+              <strong id="processingTitle">در حال آماده‌سازی فایل…</strong>
+              <p id="processingDescription">لطفاً این پنجره را باز نگه دارید.</p>
+              <div class="progress-track"><span id="progressBar"></span></div>
+              <div class="processing-steps" aria-hidden="true">
+                <span class="is-active">آماده‌سازی</span><span>پردازش گفتار</span><span>ساخت رونوشت</span>
+              </div>
+            </div>
+
+            <div class="transcript-area is-hidden" id="transcriptArea">
+              <textarea id="transcriptText" aria-label="متن رونوشت قابل ویرایش" spellcheck="false" placeholder="متن رونوشت اینجا قرار می‌گیرد…"></textarea>
+              <div class="transcript-footer">
+                <div class="transcript-stats">
+                  <span id="wordCount">۰ واژه</span>
+                  <span aria-hidden="true">•</span>
+                  <span id="characterCount">۰ نویسه</span>
+                </div>
+                <span class="editable-hint">برای ویرایش، مستقیم روی متن بنویسید</span>
+              </div>
+            </div>
+
+            <div class="segments-panel is-hidden" id="segmentsPanel" aria-live="polite">
+              <div class="segments-header">
+                <span id="segmentsTitle">جزئیات رونوشت</span>
+                <span id="segmentsCount"></span>
+              </div>
+              <div id="segmentsList" class="segments-list"></div>
+            </div>
+
+            <p class="result-error is-hidden" id="resultError" role="alert"></p>
+          </div>
+
+          <section class="recent-card" aria-labelledby="recentHeading">
+            <div class="recent-heading-row">
+              <div>
+                <p class="section-kicker">بایگانی محلی</p>
+                <h3 id="recentHeading">رونوشت‌های اخیر</h3>
+              </div>
+              <button class="text-button is-hidden" id="clearHistory" type="button">پاک‌کردن همه</button>
+            </div>
+            <div class="history-empty" id="historyEmpty">رونوشت‌های تکمیل‌شده فقط در همین مرورگر نگه‌داری می‌شوند.</div>
+            <ul class="history-list" id="historyList" aria-label="فهرست رونوشت‌های اخیر"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section class="how-it-works shell" id="how-it-works" aria-labelledby="howItWorksHeading">
+        <div class="how-heading">
+          <p class="eyebrow"><span class="eyebrow-spark">✦</span> ساده، امن، بی‌واسطه</p>
+          <h2 id="howItWorksHeading">سه قدم تا متن آماده</h2>
+        </div>
+        <ol class="how-grid">
+          <li>
+            <span>۱</span>
+            <div><h3>صدا را انتخاب کنید</h3><p>فایل صوتی را بکشید و رها کنید یا مستقیم ضبط کنید.</p></div>
+          </li>
+          <li>
+            <span>۲</span>
+            <div><h3>تنظیم دلخواه را برگزینید</h3><p>مدل، زمان‌بندی یا تفکیک گوینده را مطابق نیازتان تنظیم کنید.</p></div>
+          </li>
+          <li>
+            <span>۳</span>
+            <div><h3>متن را ویرایش و ذخیره کنید</h3><p>رونوشت را کپی کنید، اصلاح کنید یا به‌صورت فایل متنی دانلود کنید.</p></div>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <a class="brand footer-brand" href="#top" aria-label="بازگشت به ابتدا">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span>آوا<span class="brand-accent">نویس</span></span>
+      </a>
+      <p>تبدیل گفتار فارسی به متن با توان Puter.js</p>
+      <a href="https://developer.puter.com/tutorials/free-unlimited-speech-to-text-api/" target="_blank" rel="noreferrer">درباره فناوری Puter.js <span aria-hidden="true">↗</span></a>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
